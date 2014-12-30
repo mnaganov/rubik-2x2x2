@@ -2,6 +2,7 @@
 
 from collections import deque
 import math
+import time
 
 from euclid import *
 
@@ -63,6 +64,9 @@ class Turn:
       return Turn(self._side, Turn.T270)
     else:
       return Turn(self._side, Turn.T90)
+
+  def __repr__(self):
+    return ('Turn %d %d' % (self._side, self._angle))
 
 class State:
   X = 0
@@ -141,7 +145,7 @@ class State:
 
   def _state_to_coords(self, positive_axis=None):
     coords = State._COORDS
-    if positive_axis:
+    if positive_axis != None:
       coords = map(
         lambda coord: coord if coord[positive_axis] > 0 else (0, 0, 0),
         coords)
@@ -151,11 +155,7 @@ class State:
     new_state = list(self._state)
     for (pos, coord) in enumerate(coords):
       if coord != (0, 0, 0):
-        try:
-          new_state[pos] = colors[coord]
-        except KeyError:
-          print coords
-          raise
+        new_state[pos] = colors[coord]
     return State(new_state)
 
   def __hash__(self):
@@ -164,13 +164,16 @@ class State:
   def __eq__(self, other):
     return self._state == other._state
 
+  def __repr__(self):
+    return str(self._state)
+
   _COORDS = [
     (2, 1, 1), (2, 1, -1), (2, -1, -1), (2, -1, 1),
     (1, -2, 1), (1, -2, -1), (-1, -2, -1), (-1, -2, 1),
     (-1, 1, 2), (1, 1, 2), (1, -1, 2), (-1, -1, 2),
     (-2, -1, 1), (-2, -1, -1), (-2, 1, -1), (-2, 1, 1),
     (-1, 2, 1), (-1, 2, -1), (1, 2, -1), (1, 2, 1),
-    (1, 1, -2), (-1, 1, -2), (-1, -1, -2), (1, -1, -2)
+    (-1, -1, -2), (1, -1, -2), (1, 1, -2), (-1, 1, -2)
   ]
 
 class Solver:
@@ -189,24 +192,29 @@ class Solver:
 
   def _phase1(self):
     final_state_eqs = self._final_state.get_equivalents()
+    last_report_time = None
     while len(self._states_to_check) > 0 and \
           not self._find_known_state(final_state_eqs):
+      t = time.clock()
+      if not last_report_time or t - last_report_time >= 1.0:
+        last_report_time = t
+        print len(self._states_to_check)
       state = self._states_to_check.popleft()
       new_states_and_turns = self._generate_states_and_turns(state)
       for (new_state, turn) in new_states_and_turns:
         if self._find_known_state(new_state.get_equivalents()):
           continue
         self._known_states[new_state] = turn
-        self._states_to_check.enque(new_state)
+        self._states_to_check.append(new_state)
     return self._find_known_state(final_state_eqs)
 
   def _phase2(self):
     state = self._find_known_state(self._final_state.get_equivalents())
     path = []
     while not self._initial_state in state.get_equivalents():
-      turn_back = self._known_states[state].reverse()
-      path.append(turn_back)
-      state = state.apply(turn_back)
+      turn = self._known_states[state]
+      path.append(turn)
+      state = state.apply(turn.reverse())
     path.reverse()
     return path
 
@@ -214,7 +222,7 @@ class Solver:
     sides = Side.minimal_list()
     angles = range(Turn.FIRST, Turn.LAST)
     turns = [Turn(s, a) for s in sides for a in angles]
-    return [state.apply(t) for t in turns]
+    return [(state.apply(t), t) for t in turns]
 
   def _find_known_state(self, states):
     for s in states:
@@ -239,11 +247,11 @@ if __name__ == '__main__':
   initial_state = State([
     # RT, RB, LB, LT
     _W, _W, _W, _W, # FRONT
-    _R, _R, _R, _R, # LEFT
-    _G, _G, _G, _G, # UPPER
+    _R, _R, _G, _B, # LEFT
+    _G, _G, _G, _R, # UPPER
     _Y, _Y, _Y, _Y, # BACK
     _O, _O, _O, _O, # RIGHT
-    _B, _B, _B, _B  # DOWN
+    _R, _B, _B, _B  # DOWN
   ])
   final_state = None
   # final_state = State([

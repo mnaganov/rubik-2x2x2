@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from collections import deque
-import copy
+import math
 
 from euclid import *
 
@@ -44,6 +44,7 @@ class Turn:
   T270 = 2
   FIRST = T90
   LAST = T270 + 1
+  RADIANS = (math.pi / 2, math.pi, math.pi / -2)
 
   def __init__(self, side, angle):
     self._side = side
@@ -67,9 +68,10 @@ class State:
   X = 0
   Y = 1
   Z = 2
+  AXIS = (Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1))
 
   def __init__(self, tiles_by_sides_6_x_4):
-    self._state = tuple(tuple(l) for l in tiles_by_sides_6_x_4)
+    self._state = tuple(tiles_by_sides_6_x_4)
 
   def verify(self):
     # verify that all corners do present
@@ -77,61 +79,83 @@ class State:
     return True
 
   def get_equivalents(self):
-    return [State(copy.deepcopy(self._state))]
-    # _X = State.X
-    # _Y = State.Y
-    # _Z = State.Z
-    # _C = Turn.T90
-    # _C2 = Turn.T180
-    # _CC = Turn.T270
-    # return [
-    #   self._rotate_cube([]),
-    #   self._rotate_cube([(_Z, _C), (_Y, _C)])
-    #   self._rotate_cube([(_Z, _CC), (_Y, _CC)]),
-    #   self._rotate_cube([(_Z, _CC)]),
-    #   self._rotate_cube([(_Y, _C)]),
-    #   self._rotate_cube([(_Z, _C2), (_X, _C)]),
-    #   self._rotate_cube([(_Z, _C2)]),
-    #   self._rotate_cube([(_X, _CC), (_Z, _C)]),
-    #   self._rotate_cube([(_Y, _C), (_Z, _CC)]),
-    #   self._rotate_cube([(_Z, _C)]),
-    #   self._rotate_cube([(_X, _CC)]),
-    #   self._rotate_cube([(_Z, _C2), (_Y, _CC)]),
-    #   self._rotate_cube([(_Y, _CC)]),
-    #   self._rotate_cube([(_X, _C)]),
-    #   self._rotate_cube([(_Y, _C2), (_Z, _C)]),
-    #   self._rotate_cube([(_Z, _C), (_Y, _CC)]),
-    #   self._rotate_cube([(_Z, _C), (_X, _CC)]),
-    #   self._rotate_cube([(_X, _C2)]),
-    #   self._rotate_cube([(_Z, _C2), (_X, _CC)]),
-    #   self._rotate_cube([(_Z, _C2), (_Y, _C)]),
-    #   self._rotate_cube([(_Y, _C2), (_Z, _CC)]),
-    #   self._rotate_cube([(_Y, _CC), (_Z, _CC)]),
-    #   self._rotate_cube([(_Y, _C2)]),
-    #   self._rotate_cube([(_Z, _CC), (_Y, _C)])
-    # ]
+    _X = State.X
+    _Y = State.Y
+    _Z = State.Z
+    _C = Turn.T90
+    _C2 = Turn.T180
+    _CC = Turn.T270
+    return [
+      self._rotate_cube([]),
+      self._rotate_cube([(_Z, _C), (_Y, _C)]),
+      self._rotate_cube([(_Z, _CC), (_Y, _CC)]),
+      self._rotate_cube([(_Z, _CC)]),
+      self._rotate_cube([(_Y, _C)]),
+      self._rotate_cube([(_Z, _C2), (_X, _C)]),
+      self._rotate_cube([(_Z, _C2)]),
+      self._rotate_cube([(_X, _CC), (_Z, _C)]),
+      self._rotate_cube([(_Y, _C), (_Z, _CC)]),
+      self._rotate_cube([(_Z, _C)]),
+      self._rotate_cube([(_X, _CC)]),
+      self._rotate_cube([(_Z, _C2), (_Y, _CC)]),
+      self._rotate_cube([(_Y, _CC)]),
+      self._rotate_cube([(_X, _C)]),
+      self._rotate_cube([(_Y, _C2), (_Z, _C)]),
+      self._rotate_cube([(_Z, _C), (_Y, _CC)]),
+      self._rotate_cube([(_Z, _C), (_X, _CC)]),
+      self._rotate_cube([(_X, _C2)]),
+      self._rotate_cube([(_Z, _C2), (_X, _CC)]),
+      self._rotate_cube([(_Z, _C2), (_Y, _C)]),
+      self._rotate_cube([(_Y, _C2), (_Z, _CC)]),
+      self._rotate_cube([(_Y, _CC), (_Z, _CC)]),
+      self._rotate_cube([(_Y, _C2)]),
+      self._rotate_cube([(_Z, _CC), (_Y, _C)])
+    ]
 
   def apply(self, turn):
     axis = [State.X, None, State.Z, None, State.Y, None][turn.side()]
     return self._rotate_half_cube(axis, turn.angle())
 
   def _rotate_cube(self, rotations):
-    points = self._state_to_points(self._state)
-    # rotate points
-    return self._create_state_from_points(points)
+    (coords, colors) = self._state_to_coords()
+    return self._do_rotate(coords, colors, rotations)
 
   def _rotate_half_cube(self, axis, angle):
-    points = self._state_to_points(self._state, positive_axis=axis)
-    # rotate points
-    return self._create_state_from_points(points)
+    (coords, colors) = self._state_to_coords(positive_axis=axis)
+    return self._do_rotate(coords, colors, [(axis, angle)])
 
-  def _state_to_points(self, state, positive_axis=[]):
-    # return list of points 3d coupled with colors
-    return []
+  def _do_rotate(self, coords, colors, rotations):
+    m = Matrix4()
+    for (axis, angle) in rotations:
+      m.rotate_axis(Turn.RADIANS[angle], State.AXIS[axis])
+    points = map(lambda p: m * p, self._coords_to_points(coords))
+    return self._create_state_from_coords(
+      self._points_to_coords(points), colors)
 
-  def _create_state_from_points(self, points):
-    new_state = copy.deepcopy(self._state)
-    # update new_state from points
+  def _coords_to_points(self, coords):
+    return map(lambda coord: Point3(coord[0], coord[1], coord[2]), coords)
+
+  def _points_to_coords(self, points):
+    return map(lambda point: \
+      (int(round(point.x)), int(round(point.y)), int(round(point.z))), points)
+
+  def _state_to_coords(self, positive_axis=None):
+    coords = State._COORDS
+    if positive_axis:
+      coords = map(
+        lambda coord: coord if coord[positive_axis] > 0 else (0, 0, 0),
+        coords)
+    return (coords, dict(zip(State._COORDS, self._state)))
+
+  def _create_state_from_coords(self, coords, colors):
+    new_state = list(self._state)
+    for (pos, coord) in enumerate(coords):
+      if coord != (0, 0, 0):
+        try:
+          new_state[pos] = colors[coord]
+        except KeyError:
+          print coords
+          raise
     return State(new_state)
 
   def __hash__(self):
@@ -139,6 +163,15 @@ class State:
 
   def __eq__(self, other):
     return self._state == other._state
+
+  _COORDS = [
+    (2, 1, 1), (2, 1, -1), (2, -1, -1), (2, -1, 1),
+    (1, -2, 1), (1, -2, -1), (-1, -2, -1), (-1, -2, 1),
+    (-1, 1, 2), (1, 1, 2), (1, -1, 2), (-1, -1, 2),
+    (-2, -1, 1), (-2, -1, -1), (-2, 1, -1), (-2, 1, 1),
+    (-1, 2, 1), (-1, 2, -1), (1, 2, -1), (1, 2, 1),
+    (1, 1, -2), (-1, 1, -2), (-1, -1, -2), (1, -1, -2)
+  ]
 
 class Solver:
   def __init__(self, initial_state, final_state=None):
@@ -191,10 +224,7 @@ class Solver:
 
   @staticmethod
   def solved_state():
-    state_matrix = []
-    for side_or_color in range(Side.LAST):
-      state_matrix.append(
-        [side_or_color for tile in range(Tile.LAST)])
+    state_matrix = [c for c in range(Side.LAST) for t in range(Tile.LAST)]
     state = State(state_matrix)
     assert state.verify()
     return state
@@ -208,22 +238,22 @@ if __name__ == '__main__':
   _B = Color.BLUE
   initial_state = State([
     # RT, RB, LB, LT
-    [], # FRONT
-    [], # LEFT
-    [], # UPPER
-    [], # BACK
-    [], # RIGHT
-    []  # DOWN
+    _W, _W, _W, _W, # FRONT
+    _R, _R, _R, _R, # LEFT
+    _G, _G, _G, _G, # UPPER
+    _Y, _Y, _Y, _Y, # BACK
+    _O, _O, _O, _O, # RIGHT
+    _B, _B, _B, _B  # DOWN
   ])
   final_state = None
-  final_state = State([
-    # RT, RB, LB, LT
-    [], # FRONT
-    [], # LEFT
-    [], # UPPER
-    [], # BACK
-    [], # RIGHT
-    []  # DOWN
-  ])
+  # final_state = State([
+  #   # RT, RB, LB, LT
+  #   _W, _W, _W, _W, # FRONT
+  #   _R, _R, _R, _R, # LEFT
+  #   _G, _G, _G, _G, # UPPER
+  #   _Y, _Y, _Y, _Y, # BACK
+  #   _O, _O, _O, _O, # RIGHT
+  #   _B, _B, _B, _B  # DOWN
+  # ])
   solver = Solver(initial_state, final_state)
   print solver.solve()

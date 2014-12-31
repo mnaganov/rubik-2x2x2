@@ -43,7 +43,7 @@ class TrivialTestCase(SolverTestCaseBase):
     result = solver.solve()
     assert len(result) == 0
 
-class TestReverseTestCase(SolverTestCaseBase):
+class TurnReverseTestCase(SolverTestCaseBase):
   def runTest(self):
     initial_state = Solver.solved_state()
     f_turn = Turn(Side.FRONT, Turn.T90)
@@ -53,7 +53,7 @@ class TestReverseTestCase(SolverTestCaseBase):
     f2_turn = Turn(Side.FRONT, Turn.T180)
     assert initial_state.apply(f2_turn).apply(f2_turn.reverse()) == initial_state
 
-class TurnFTestCase(SolverTestCaseBase):
+class BasicTurnsTestCase(SolverTestCaseBase):
   def runTest(self):
     _W = Color.WHITE
     _R = Color.RED
@@ -72,16 +72,16 @@ class TurnFTestCase(SolverTestCaseBase):
       _O, _O, _G, _G, # RIGHT
       _B, _O, _O, _B  # DOWN
     ])
-
-class TurnF2TestCase(SolverTestCaseBase):
-  def runTest(self):
-    _W = Color.WHITE
-    _R = Color.RED
-    _G = Color.GREEN
-    _Y = Color.YELLOW
-    _O = Color.ORANGE
-    _B = Color.BLUE
-    initial_state = Solver.solved_state()
+    f1_state = initial_state.apply(Turn(Side.FRONT, Turn.T270))
+    assert f1_state == State([
+      # RT, RB, LB, LT
+      _W, _W, _W, _W, # FRONT
+      _G, _G, _R, _R, # LEFT
+      _G, _O, _O, _G, # UPPER
+      _Y, _Y, _Y, _Y, # BACK
+      _O, _O, _B, _B, # RIGHT
+      _B, _R, _R, _B  # DOWN
+    ])
     f2_state = initial_state.apply(Turn(Side.FRONT, Turn.T180))
     assert f2_state == State([
       # RT, RB, LB, LT
@@ -92,25 +92,65 @@ class TurnF2TestCase(SolverTestCaseBase):
       _O, _O, _R, _R, # RIGHT
       _B, _G, _G, _B  # DOWN
     ])
-
-class TurnF1TestCase(SolverTestCaseBase):
-  def runTest(self):
-    _W = Color.WHITE
-    _R = Color.RED
-    _G = Color.GREEN
-    _Y = Color.YELLOW
-    _O = Color.ORANGE
-    _B = Color.BLUE
-    initial_state = Solver.solved_state()
-    f1_state = initial_state.apply(Turn(Side.FRONT, Turn.T270))
-    assert f1_state == State([
+    u_state = initial_state.apply(Turn(Side.UPPER, Turn.T90))
+    assert u_state == State([
       # RT, RB, LB, LT
-      _W, _W, _W, _W, # FRONT
-      _G, _G, _R, _R, # LEFT
-      _G, _O, _O, _G, # UPPER
-      _Y, _Y, _Y, _Y, # BACK
-      _O, _O, _B, _B, # RIGHT
-      _B, _R, _R, _B  # DOWN
+      _O, _W, _W, _O, # FRONT
+      _W, _R, _R, _W, # LEFT
+      _G, _G, _G, _G, # UPPER
+      _R, _Y, _Y, _R, # BACK
+      _Y, _O, _O, _Y, # RIGHT
+      _B, _B, _B, _B  # DOWN
+    ])
+    u1_state = initial_state.apply(Turn(Side.UPPER, Turn.T270))
+    assert u1_state == State([
+      # RT, RB, LB, LT
+      _R, _W, _W, _R, # FRONT
+      _Y, _R, _R, _Y, # LEFT
+      _G, _G, _G, _G, # UPPER
+      _O, _Y, _Y, _O, # BACK
+      _W, _O, _O, _W, # RIGHT
+      _B, _B, _B, _B  # DOWN
+    ])
+    u2_state = initial_state.apply(Turn(Side.UPPER, Turn.T180))
+    assert u2_state == State([
+      # RT, RB, LB, LT
+      _Y, _W, _W, _Y, # FRONT
+      _O, _R, _R, _O, # LEFT
+      _G, _G, _G, _G, # UPPER
+      _W, _Y, _Y, _W, # BACK
+      _R, _O, _O, _R, # RIGHT
+      _B, _B, _B, _B  # DOWN
+    ])
+    r_state = initial_state.apply(Turn(Side.RIGHT, Turn.T90))
+    assert r_state == State([
+      # RT, RB, LB, LT
+      _B, _B, _W, _W, # FRONT
+      _R, _R, _R, _R, # LEFT
+      _W, _W, _G, _G, # UPPER
+      _Y, _Y, _G, _G, # BACK
+      _O, _O, _O, _O, # RIGHT
+      _B, _B, _Y, _Y  # DOWN
+    ])
+    r1_state = initial_state.apply(Turn(Side.RIGHT, Turn.T270))
+    assert r1_state == State([
+      # RT, RB, LB, LT
+      _G, _G, _W, _W, # FRONT
+      _R, _R, _R, _R, # LEFT
+      _Y, _Y, _G, _G, # UPPER
+      _Y, _Y, _B, _B, # BACK
+      _O, _O, _O, _O, # RIGHT
+      _B, _B, _W, _W  # DOWN
+    ])
+    r2_state = initial_state.apply(Turn(Side.RIGHT, Turn.T180))
+    assert r2_state == State([
+      # RT, RB, LB, LT
+      _Y, _Y, _W, _W, # FRONT
+      _R, _R, _R, _R, # LEFT
+      _B, _B, _G, _G, # UPPER
+      _Y, _Y, _W, _W, # BACK
+      _O, _O, _O, _O, # RIGHT
+      _B, _B, _G, _G  # DOWN
     ])
 
 class EquivalentsTestCase(SolverTestCaseBase):

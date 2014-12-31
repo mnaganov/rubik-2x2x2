@@ -6,7 +6,7 @@ from solver import *
 
 class SolverTestCaseBase(unittest.TestCase):
   def setUp(self):
-    pass
+    Rotator.init()
 
 class SolvedStateTestCase(SolverTestCaseBase):
   def runTest(self):

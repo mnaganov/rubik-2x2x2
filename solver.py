@@ -66,14 +66,11 @@ class Turn:
       return Turn(self._side, Turn.T90)
 
   def __repr__(self):
-    return ('Turn %d %d' % (self._side, self._angle))
+    sides = ['F', 'L', 'U', 'B', 'R', 'D']
+    angles = ['', '2', '\'']
+    return ('%s%s' % (sides[self._side], angles[self._angle]))
 
 class State:
-  X = 0
-  Y = 1
-  Z = 2
-  AXIS = (Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1))
-
   def __init__(self, tiles_by_sides_6_x_4):
     self._state = tuple(tiles_by_sides_6_x_4)
 
@@ -83,80 +80,48 @@ class State:
     return True
 
   def get_equivalents(self):
-    _X = State.X
-    _Y = State.Y
-    _Z = State.Z
+    _X = Rotator.X
+    _Y = Rotator.Y
+    _Z = Rotator.Z
     _C = Turn.T90
     _C2 = Turn.T180
     _CC = Turn.T270
     return [
-      self._rotate_cube([]),
-      self._rotate_cube([(_Z, _C), (_Y, _C)]),
-      self._rotate_cube([(_Z, _CC), (_Y, _CC)]),
-      self._rotate_cube([(_Z, _CC)]),
-      self._rotate_cube([(_Y, _C)]),
-      self._rotate_cube([(_Z, _C2), (_X, _C)]),
-      self._rotate_cube([(_Z, _C2)]),
-      self._rotate_cube([(_X, _CC), (_Z, _C)]),
-      self._rotate_cube([(_Y, _C), (_Z, _CC)]),
-      self._rotate_cube([(_Z, _C)]),
-      self._rotate_cube([(_X, _CC)]),
-      self._rotate_cube([(_Z, _C2), (_Y, _CC)]),
-      self._rotate_cube([(_Y, _CC)]),
-      self._rotate_cube([(_X, _C)]),
-      self._rotate_cube([(_Y, _C2), (_Z, _C)]),
-      self._rotate_cube([(_Z, _C), (_Y, _CC)]),
-      self._rotate_cube([(_Z, _C), (_X, _CC)]),
-      self._rotate_cube([(_X, _C2)]),
-      self._rotate_cube([(_Z, _C2), (_X, _CC)]),
-      self._rotate_cube([(_Z, _C2), (_Y, _C)]),
-      self._rotate_cube([(_Y, _C2), (_Z, _CC)]),
-      self._rotate_cube([(_Y, _CC), (_Z, _CC)]),
-      self._rotate_cube([(_Y, _C2)]),
-      self._rotate_cube([(_Z, _CC), (_Y, _C)])
+      self._rotate_cube(()),
+      self._rotate_cube(((_Z, _C), (_Y, _C))),
+      self._rotate_cube(((_Z, _CC), (_Y, _CC))),
+      self._rotate_cube(((_Z, _CC),)),
+      self._rotate_cube(((_Y, _C),)),
+      self._rotate_cube(((_Z, _C2), (_X, _C))),
+      self._rotate_cube(((_Z, _C2),)),
+      self._rotate_cube(((_X, _CC), (_Z, _C))),
+      self._rotate_cube(((_Y, _C), (_Z, _CC))),
+      self._rotate_cube(((_Z, _C),)),
+      self._rotate_cube(((_X, _CC),)),
+      self._rotate_cube(((_Z, _C2), (_Y, _CC))),
+      self._rotate_cube(((_Y, _CC),)),
+      self._rotate_cube(((_X, _C),)),
+      self._rotate_cube(((_Y, _C2), (_Z, _C))),
+      self._rotate_cube(((_Z, _C), (_Y, _CC))),
+      self._rotate_cube(((_Z, _C), (_X, _CC))),
+      self._rotate_cube(((_X, _C2),)),
+      self._rotate_cube(((_Z, _C2), (_X, _CC))),
+      self._rotate_cube(((_Z, _C2), (_Y, _C))),
+      self._rotate_cube(((_Y, _C2), (_Z, _CC))),
+      self._rotate_cube(((_Y, _CC), (_Z, _CC))),
+      self._rotate_cube(((_Y, _C2),)),
+      self._rotate_cube(((_Z, _CC), (_Y, _C)))
     ]
 
   def apply(self, turn):
-    axis = [State.X, None, State.Z, None, State.Y, None][turn.side()]
+    axis = [Rotator.X, None, Rotator.Z, None, Rotator.Y, None][turn.side()]
     return self._rotate_half_cube(axis, turn.angle())
 
   def _rotate_cube(self, rotations):
-    (coords, colors) = self._state_to_coords()
-    return self._do_rotate(coords, colors, rotations)
+    return State(Rotator.full_rotate(rotations, self._state))
 
   def _rotate_half_cube(self, axis, angle):
-    (coords, colors) = self._state_to_coords(positive_axis=axis)
-    return self._do_rotate(coords, colors, [(axis, angle)])
-
-  def _do_rotate(self, coords, colors, rotations):
-    m = Matrix4()
-    for (axis, angle) in rotations:
-      m.rotate_axis(Turn.RADIANS[angle], State.AXIS[axis])
-    points = map(lambda p: m * p, self._coords_to_points(coords))
-    return self._create_state_from_coords(
-      self._points_to_coords(points), colors)
-
-  def _coords_to_points(self, coords):
-    return map(lambda coord: Point3(coord[0], coord[1], coord[2]), coords)
-
-  def _points_to_coords(self, points):
-    return map(lambda point: \
-      (int(round(point.x)), int(round(point.y)), int(round(point.z))), points)
-
-  def _state_to_coords(self, positive_axis=None):
-    coords = State._COORDS
-    if positive_axis != None:
-      coords = map(
-        lambda coord: coord if coord[positive_axis] > 0 else (0, 0, 0),
-        coords)
-    return (coords, dict(zip(State._COORDS, self._state)))
-
-  def _create_state_from_coords(self, coords, colors):
-    new_state = list(self._state)
-    for (pos, coord) in enumerate(coords):
-      if coord != (0, 0, 0):
-        new_state[pos] = colors[coord]
-    return State(new_state)
+    return State(Rotator.half_rotate((axis, angle), self._state))
 
   def __hash__(self):
     return hash(self._state)
@@ -167,6 +132,83 @@ class State:
   def __repr__(self):
     return str(self._state)
 
+class Rotator:
+  X = 0
+  Y = 1
+  Z = 2
+
+  @staticmethod
+  def init():
+    if hasattr(Rotator, '_initialized'):
+      return
+    Rotator._full_transposes = \
+      {r: Rotator._full_rotation(r) for r in Rotator._FULL_ROTATIONS}
+    Rotator._half_transposes = \
+      {r: Rotator._half_rotation(r) for r in Rotator._HALF_ROTATIONS}
+    _initialized = True
+
+  @staticmethod
+  def full_rotate(rotations, state):
+    return Rotator._rotate(Rotator._full_transposes[rotations], state)
+
+  @staticmethod
+  def half_rotate(rotation, state):
+    return Rotator._rotate(Rotator._half_transposes[rotation], state)
+
+  @staticmethod
+  def _rotate(transpose, state):
+    result = list(state)
+    for (pos, x) in enumerate(transpose):
+      result[pos] = state[x]
+    return result
+
+  @staticmethod
+  def _full_rotation(rotations):
+    coords = Rotator._get_coords()
+    return Rotator._do_rotate(coords, rotations)
+
+  @staticmethod
+  def _half_rotation(rotation):
+    coords = Rotator._get_coords(positive_axis=rotation[0])
+    return Rotator._do_rotate(coords, (rotation,))
+
+  @staticmethod
+  def _do_rotate(coords, rotations):
+    m = Matrix4()
+    for (axis, angle) in rotations:
+      m.rotate_axis(Turn.RADIANS[angle], Rotator._AXIS[axis])
+    points = map(lambda p: m * p, Rotator._coords_to_points(coords))
+    return Rotator._create_transpose_from_coords(
+      Rotator._points_to_coords(points))
+
+  @staticmethod
+  def _coords_to_points(coords):
+    return map(lambda coord: Point3(coord[0], coord[1], coord[2]), coords)
+
+  @staticmethod
+  def _points_to_coords(points):
+    return map(lambda point: \
+      (int(round(point.x)), int(round(point.y)), int(round(point.z))), points)
+
+  @staticmethod
+  def _get_coords(positive_axis=None):
+    coords = Rotator._COORDS
+    if positive_axis != None:
+      coords = map(
+        lambda coord: coord if coord[positive_axis] > 0 else (0, 0, 0),
+        coords)
+    return coords
+
+  @staticmethod
+  def _create_transpose_from_coords(coords):
+    positions = dict(zip(Rotator._COORDS, range(len(Rotator._COORDS))))
+    transpose = range(len(Rotator._COORDS))
+    for (pos, coord) in enumerate(coords):
+      if coord != (0, 0, 0):
+        transpose[pos] = positions[coord]
+    return tuple(transpose)
+
+  _AXIS = (Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1))
   _COORDS = [
     (2, 1, 1), (2, 1, -1), (2, -1, -1), (2, -1, 1),
     (1, -2, 1), (1, -2, -1), (-1, -2, -1), (-1, -2, 1),
@@ -174,6 +216,37 @@ class State:
     (-2, -1, 1), (-2, -1, -1), (-2, 1, -1), (-2, 1, 1),
     (-1, 2, 1), (-1, 2, -1), (1, 2, -1), (1, 2, 1),
     (-1, -1, -2), (1, -1, -2), (1, 1, -2), (-1, 1, -2)
+  ]
+  _FULL_ROTATIONS = [
+    (),
+    ((Z, Turn.T90), (Y, Turn.T90)),
+    ((Z, Turn.T270), (Y, Turn.T270)),
+    ((Z, Turn.T270),),
+    ((Y, Turn.T90),),
+    ((Z, Turn.T180), (X, Turn.T90)),
+    ((Z, Turn.T180),),
+    ((X, Turn.T270), (Z, Turn.T90)),
+    ((Y, Turn.T90), (Z, Turn.T270)),
+    ((Z, Turn.T90),),
+    ((X, Turn.T270),),
+    ((Z, Turn.T180), (Y, Turn.T270)),
+    ((Y, Turn.T270),),
+    ((X, Turn.T90),),
+    ((Y, Turn.T180), (Z, Turn.T90)),
+    ((Z, Turn.T90), (Y, Turn.T270)),
+    ((Z, Turn.T90), (X, Turn.T270)),
+    ((X, Turn.T180),),
+    ((Z, Turn.T180), (X, Turn.T270)),
+    ((Z, Turn.T180), (Y, Turn.T90)),
+    ((Y, Turn.T180), (Z, Turn.T270)),
+    ((Y, Turn.T270), (Z, Turn.T270)),
+    ((Y, Turn.T180),),
+    ((Z, Turn.T270), (Y, Turn.T90))
+  ]
+  _HALF_ROTATIONS = [
+    (X, Turn.T90), (X, Turn.T180), (X, Turn.T270),
+    (Y, Turn.T90), (Y, Turn.T180), (Y, Turn.T270),
+    (Z, Turn.T90), (Z, Turn.T180), (Z, Turn.T270)
   ]
 
 class Solver:
@@ -238,6 +311,7 @@ class Solver:
     return state
 
 if __name__ == '__main__':
+  Rotator.init()
   _W = Color.WHITE
   _R = Color.RED
   _G = Color.GREEN
@@ -246,12 +320,12 @@ if __name__ == '__main__':
   _B = Color.BLUE
   initial_state = State([
     # RT, RB, LB, LT
-    _W, _W, _W, _W, # FRONT
-    _R, _R, _G, _B, # LEFT
-    _G, _G, _G, _R, # UPPER
-    _Y, _Y, _Y, _Y, # BACK
-    _O, _O, _O, _O, # RIGHT
-    _R, _B, _B, _B  # DOWN
+    _W, _G, _B, _R, # FRONT
+    _Y, _R, _B, _R, # LEFT
+    _O, _G, _G, _B, # UPPER
+    _W, _O, _G, _Y, # BACK
+    _B, _O, _W, _O, # RIGHT
+    _W, _Y, _R, _Y  # DOWN
   ])
   final_state = None
   # final_state = State([

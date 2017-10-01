@@ -1,0 +1,9 @@
+# RT, RB, LB, LT
+_Y, _Y, _W, _Y, # FRONT
+_O, _R, _O, _O, # LEFT
+_G, _G, _G, _G, # UPPER
+_W, _W, _Y, _W, # BACK
+_R, _O, _R, _R, # RIGHT
+_B, _B, _B, _B  # DOWN
+
+[F2, U', F, U', R', U, R2, U, R, F, R']

@@ -320,12 +320,12 @@ if __name__ == '__main__':
   _B = Color.BLUE
   initial_state = State([
     # RT, RB, LB, LT
-    _Y, _Y, _Y, _Y, # FRONT
-    _O, _O, _O, _R, # LEFT
-    _G, _G, _G, _B, # UPPER
-    _W, _W, _W, _W, # BACK
+    _Y, _Y, _W, _Y, # FRONT
+    _O, _R, _O, _O, # LEFT
+    _G, _G, _G, _G, # UPPER
+    _W, _W, _Y, _W, # BACK
     _R, _O, _R, _R, # RIGHT
-    _B, _B, _B, _G  # DOWN
+    _B, _B, _B, _B  # DOWN
   ])
   final_state = None
   # final_state = State([

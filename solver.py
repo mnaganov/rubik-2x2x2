@@ -318,24 +318,29 @@ if __name__ == '__main__':
   _Y = Color.YELLOW
   _O = Color.ORANGE
   _B = Color.BLUE
+# To describe the state of the cube,
+# move the viewpoint around it, orthogonal
+# to the front side of each face. When
+# describing the face, move clockwise starting
+# from the sector between 12 o'clock and 3.
   initial_state = State([
     # RT, RB, LB, LT
-    _Y, _Y, _W, _Y, # FRONT
-    _O, _R, _O, _O, # LEFT
-    _G, _G, _G, _G, # UPPER
-    _W, _W, _Y, _W, # BACK
-    _R, _O, _R, _R, # RIGHT
-    _B, _B, _B, _B  # DOWN
+    _W, _W, _W, _W, # FRONT
+    _R, _R, _O, _Y, # LEFT
+    _G, _G, _G, _B, # UPPER
+    _R, _Y, _Y, _R, # BACK
+    _Y, _O, _O, _O, # RIGHT
+    _G, _B, _B, _B  # DOWN
   ])
   final_state = None
   # final_state = State([
   #   # RT, RB, LB, LT
-  #   _W, _W, _W, _W, # FRONT
-  #   _R, _R, _R, _R, # LEFT
-  #   _G, _G, _G, _G, # UPPER
-  #   _Y, _Y, _Y, _Y, # BACK
-  #   _O, _O, _O, _O, # RIGHT
-  #   _B, _B, _B, _B  # DOWN
+  #   _Y, _W, _W, _O, # FRONT
+  #   _W, _R, _O, _W, # LEFT
+  #   _B, _G, _G, _G, # UPPER
+  #   _R, _Y, _Y, _Y, # BACK
+  #   _R, _O, _O, _R, # RIGHT
+  #   _B, _B, _G, _B  # DOWN
   # ])
   solver = Solver(initial_state, final_state)
   print solver.solve()
